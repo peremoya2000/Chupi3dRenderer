@@ -47,13 +47,6 @@ class Matrix4 {
 		return this;
 	}
 	
-	public Matrix4 initTranslation(float x, float y, float z) {
-		values[0][0] = 1;	values[0][1] = 0;	values[0][2] = 0;	values[0][3] = x;
-		values[1][0] = 0;	values[1][1] = 1;	values[1][2] = 0;	values[1][3] = y;
-		values[2][0] = 0;	values[2][1] = 0;	values[2][2] = 1;	values[2][3] = z;
-		values[3][0] = 0;	values[3][1] = 0;	values[3][2] = 0;	values[3][3] = 1;
-		return this;
-	}
 	
 	public Matrix4 initPointAt(Vector pos, Vector target, Vector up){
 		// Calculate new forward direction
@@ -97,6 +90,15 @@ class Matrix4 {
 		values[3][0] = 0;	values[3][1] = 0;	values[3][2] = 0;	values[3][3] = 1;
 		return this;
 	}
+	
+	public Matrix4 initTranslation(float x, float y, float z) {
+		values[0][0] = 1;	values[0][1] = 0;	values[0][2] = 0;	values[0][3] = x;
+		values[1][0] = 0;	values[1][1] = 1;	values[1][2] = 0;	values[1][3] = y;
+		values[2][0] = 0;	values[2][1] = 0;	values[2][2] = 1;	values[2][3] = z;
+		values[3][0] = 0;	values[3][1] = 0;	values[3][2] = 0;	values[3][3] = 1;
+		return this;
+	}
+	
     Matrix4 multiply(Matrix4 other) {
         float[][] result = new float[4][4];
         for (byte row = 0; row < 4; ++row) {

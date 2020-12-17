@@ -26,11 +26,11 @@ public class Viewer3d extends JPanel implements Runnable {
 	private final Vector right = new Vector(1, 0, 0, 0);
 	// X GOES RIGHT
 	// Y GOES UP
-	// Z GOES TOWARDS THE CAMERA
+	// Z GOES TOWARDS CAMERA
 	private final Vector forward = new Vector(0, 0, -1, 0);
-	private Vector lightDir = new Vector(0, -1, -1, 0);
+	private Vector lightDir = new Vector(0, -1, 1, 0);
 	private Vector cameraLookVec = new Vector(0, 0, -1, 0);
-	private Vector cameraPos = new Vector(0, 0, 1, 0);
+	private Vector cameraPos = new Vector(0, 0, 5, 0);
 
 	public Viewer3d(JSlider slider1, JSlider slider2, JSlider slider3, JSlider slider4, Input in) {
 		this.headingSlider = slider1;
@@ -79,7 +79,7 @@ public class Viewer3d extends JPanel implements Runnable {
 	// Change the projection matrix according to fov
 	public void changeFov() {
 		this.fov = (float) Math.toRadians(fovSlider.getValue());
-		this.projMatrix.initPerspective(fov, ratio, 1.0f, 1000.0f);
+		this.projMatrix.initPerspective(fov, ratio, 1.0f, 500.0f);
 	}
 
 	public void init() {
@@ -93,9 +93,20 @@ public class Viewer3d extends JPanel implements Runnable {
 				try {
 					Thread.sleep(sleep);
 					myPaint();
-					if (input.GetKey(KeyEvent.VK_S)) {
-						System.out.println(camYaw);
+					if (input.GetKey(KeyEvent.VK_A)) {
 						camYaw+=0.1f;
+					}
+					if (input.GetKey(KeyEvent.VK_D)) {
+						camYaw-=0.1f;
+					}
+					if (input.GetKey(KeyEvent.VK_W)) {
+						cameraPos=cameraPos.add(cameraLookVec);
+						System.out.println(cameraPos.z);
+					}
+					if (input.GetKey(KeyEvent.VK_S)) {
+						//cameraPos.z+=0.1f;
+						cameraPos=cameraPos.sub(cameraLookVec);
+						System.out.println(cameraPos.z);
 					}
 				} catch (InterruptedException e) {
 					e.printStackTrace();
@@ -103,7 +114,7 @@ public class Viewer3d extends JPanel implements Runnable {
 			}else {
 				System.out.println("pause");
 				try {
-					myThread.sleep(80);
+					Thread.sleep(80);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -125,12 +136,11 @@ public class Viewer3d extends JPanel implements Runnable {
 		rotQuaternion = rotQuaternion.mul(new Quaternion(forward, roll));
 		
 		//make PointAt matrix for camera
-		Vector vTarget = new Vector(0,0,1,0);
+		Vector vTarget = new Vector(0,0,forward.z,0);
 		Matrix4 matCameraRot = new Matrix4().initRotation(up,camYaw);
 		cameraLookVec = matCameraRot.transform(vTarget);
 		vTarget = cameraPos.add(cameraLookVec);
 		Matrix4 viewMat= new Matrix4().initPointAt(cameraPos, vTarget, up).invertMatrix();
-		
 		
 		// create new zBuffer of the right size
 		zBuffer = new float[width*4][height*4];
@@ -169,8 +179,8 @@ public class Viewer3d extends JPanel implements Runnable {
 			
 			// Normalize normal vector
 			norm.normalize3d();
-
-			if (norm.dot(cameraLookVec) < 0.0f && inFrontOfCamera(cameraLookVec, cameraPos, t)) {
+			
+			if (norm.dot(cameraLookVec)<0.0f&&inFrontOfCamera(cameraLookVec, cameraPos, t, norm)) {
 				// Get light incidence angle
 				float angleCos = Math.max(0.1f, norm.dot(lightDir));
 
@@ -226,7 +236,7 @@ public class Viewer3d extends JPanel implements Runnable {
 		float redLinear = (color.getRed() * color.getRed()) * shade;
 		float greenLinear = (color.getGreen() * color.getGreen()) * shade;
 		float blueLinear = (color.getBlue() * color.getBlue()) * shade;
-		// convert the resulting color from linear to sRGB
+		// convert the resulting colour from linear to sRGB
 		short red = (short) Math.sqrt(redLinear);
 		short green = (short) Math.sqrt(greenLinear);
 		short blue = (short) Math.sqrt(blueLinear);
@@ -234,7 +244,7 @@ public class Viewer3d extends JPanel implements Runnable {
 		return new Color(red, green, blue);
 	}
 	
-	public boolean inFrontOfCamera(Vector cameraVec, Vector cameraPos, Triangle t) {
+	public boolean inFrontOfCamera(Vector cameraVec, Vector cameraPos, Triangle t, Vector normal) {
 		if(cameraVec.dot(t.v1.sub(cameraPos)) > 0.0f || cameraVec.dot(t.v2.sub(cameraPos)) > 0.0f || cameraVec.dot(t.v3.sub(cameraPos)) > 0.0f) {
 			return true;
 		}else {
