@@ -15,8 +15,7 @@ public class Importer {
 		ArrayList<Vector> vertices= new ArrayList<Vector>();
 		Triangle temp;
 		File file = new File(filelocation);
-		if (!file.isFile())
-			return null;
+		if (!file.isFile()) return null;
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(file));
 			String st; 
@@ -35,8 +34,7 @@ public class Importer {
 			    			vertices.get(Integer.parseInt(elems[3])-1),
 			    			Color.WHITE);
 			    	tris.add(temp);
-			    }
-			    
+			    }	    
 			}
 			br.close();
 		} catch (FileNotFoundException e) {
@@ -83,16 +81,17 @@ public class Importer {
                 new Vector((t.v2.x + t.v3.x)/2, (t.v2.y + t.v3.y)/2, (t.v2.z + t.v3.z)/2, 1);
             Vector m3 =
                 new Vector((t.v1.x + t.v3.x)/2, (t.v1.y + t.v3.y)/2, (t.v1.z + t.v3.z)/2, 1);
-            //use the new vertices to create 4 new triangles(that form a tetrahedron)
+            //use the new vertices to create 4 new triangles (that form a tetrahedron)
             result.add(new Triangle(t.v1, m1, m3, t.color));
             result.add(new Triangle(m2, m1, t.v2, t.color));
             result.add(new Triangle(m3, m2, t.v3, t.color));
             result.add(new Triangle(m1, m2, m3, t.color));
         }
         //loop through the vertices of the triangle and use a sphere radius to 'inflate' the new tetrahedron
+        double sqrt1 = Math.sqrt(1);
         for (Triangle t : result) {
             for (Vector v : new Vector[] { t.v1, t.v2, t.v3 }) {
-                double l = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z) / Math.sqrt(1);
+                double l = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z) / sqrt1;
                 v.x /= l;
                 v.y /= l;
                 v.z /= l;

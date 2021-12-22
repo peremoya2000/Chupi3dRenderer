@@ -21,7 +21,6 @@ public class Viewer3d extends JPanel implements Runnable {
 	private float[][] zBuffer;
 	private float fov, ratio, camYaw;
 	private Matrix4 projMatrix;
-	private Input input;
 	private final Vector up = new Vector(0, 1, 0, 0);
 	private final Vector right = new Vector(1, 0, 0, 0);
 	// X GOES RIGHT
@@ -30,14 +29,13 @@ public class Viewer3d extends JPanel implements Runnable {
 	private final Vector forward = new Vector(0, 0, -1, 0);
 	private Vector lightDir = new Vector(0, -1, 1, 0);
 	private Vector cameraLookVec = new Vector(0, 0, -1, 0);
-	private Vector cameraPos = new Vector(0, 0, 5, 0);
+	private final Vector cameraPos = new Vector(0, 0, 5, 0);
 
-	public Viewer3d(JSlider slider1, JSlider slider2, JSlider slider3, JSlider slider4, Input in) {
+	public Viewer3d(JSlider slider1, JSlider slider2, JSlider slider3, JSlider slider4) {
 		this.headingSlider = slider1;
 		this.pitchSlider = slider2;
 		this.rollSlider = slider3;
 		this.fovSlider = slider4;
-		this.input = in;
 		this.go=true;
 		this.fov = (float) Math.toRadians(90);
 		this.ratio = 1.0f;
@@ -93,21 +91,6 @@ public class Viewer3d extends JPanel implements Runnable {
 				try {
 					Thread.sleep(sleep);
 					myPaint();
-					if (input.GetKey(KeyEvent.VK_A)) {
-						camYaw+=0.1f;
-					}
-					if (input.GetKey(KeyEvent.VK_D)) {
-						camYaw-=0.1f;
-					}
-					if (input.GetKey(KeyEvent.VK_W)) {
-						cameraPos=cameraPos.add(cameraLookVec);
-						System.out.println(cameraPos.z);
-					}
-					if (input.GetKey(KeyEvent.VK_S)) {
-						//cameraPos.z+=0.1f;
-						cameraPos=cameraPos.sub(cameraLookVec);
-						System.out.println(cameraPos.z);
-					}
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -185,12 +168,10 @@ public class Viewer3d extends JPanel implements Runnable {
 				float angleCos = Math.max(0.1f, norm.dot(lightDir));
 
 				// Translate the unitary coordinates to the size of the screen
-				++v1.x;
-				++v1.y;
-				++v2.x;
-				++v2.y;
-				++v3.x;
-				++v3.y;
+				++v1.x; ++v1.y;
+				++v2.x; ++v2.y;				
+				++v3.x; ++v3.y;
+				
 				float mult = 0.5f * height;
 				float dif = 0.5f * (width - height);
 				v1.xyscale(mult);

@@ -4,9 +4,11 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.util.concurrent.TimeUnit;
 
+@SuppressWarnings("serial")
 public class Renderer extends JFrame{
 
-    public static void main(String[] args) {
+    @SuppressWarnings("unused")
+	public static void main(String[] args) {
     	Renderer r = new Renderer();
     }
     
@@ -30,9 +32,8 @@ public class Renderer extends JFrame{
         JSlider fovSlider = new JSlider(30, 180, 90);
         pane.add(fovSlider, BorderLayout.NORTH);
         
-        Input in= new Input();
         // panel to display render results
-        Viewer3d v= new Viewer3d(headingSlider,pitchSlider,rollSlider,fovSlider,in);
+        Viewer3d v= new Viewer3d(headingSlider,pitchSlider,rollSlider,fovSlider);
         pane.add(v, BorderLayout.CENTER);
 
         fovSlider.addChangeListener(e -> v.changeFov());
@@ -42,9 +43,7 @@ public class Renderer extends JFrame{
                 	v.pause();         	
                 }
         });
-        
-        this.addKeyListener(in);
-        
+                
         this.setSize(800, 600);        
         this.setVisible(true);
         this.setFocusable(true);
