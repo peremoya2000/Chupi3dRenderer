@@ -1,6 +1,8 @@
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
@@ -15,7 +17,7 @@ public class Viewer3d extends JPanel implements Runnable {
 	private ArrayList<Triangle> tris;
 	private Vector[] vBuffer;
 	private BufferedImage img;
-	private int width, height, sleep;
+	private int width, height, sMaxH, sMaxW, sleep;
 	private Graphics2D g2d;
 	private float[][] zBuffer;
 	private float fov, ratio, camYaw;
@@ -37,16 +39,19 @@ public class Viewer3d extends JPanel implements Runnable {
 		this.fovSlider = slider4;
 		this.go=true;
 		this.fov = (float) Math.toRadians(90);
+		GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+		sMaxW = gd.getDisplayMode().getWidth()+1;
+		sMaxH = gd.getDisplayMode().getHeight()+1;
 		this.ratio = 1.0f;
 		this.camYaw=0;
 		this.myThread = new Thread(this);
-		this.sleep = 16;
+		this.sleep = 1;
 		this.projMatrix = new Matrix4();
 		this.lightDir.normalize3d();
 
 		Importer i = new Importer();
-		this.tris=i.importDefault();
-		//this.tris = i.importModel("C:\\Users\\Usuario\\Desktop\\ship.obj");
+		this.tris=i.importDefault(); 
+		//this.tris = i.importModel("C:\\Users\\Usuario\\Desktop\\Monkey.obj");
 		this.vBuffer=i.getVertexBuffer();
 		
 		
@@ -68,7 +73,7 @@ public class Viewer3d extends JPanel implements Runnable {
 		if(go) {
 			go=false;
 			try {
-				TimeUnit.MILLISECONDS.sleep(60);
+				TimeUnit.MILLISECONDS.sleep(40);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -98,7 +103,7 @@ public class Viewer3d extends JPanel implements Runnable {
 			}else {
 				System.out.println("pause");
 				try {
-					Thread.sleep(80);
+					Thread.sleep(40);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -128,8 +133,8 @@ public class Viewer3d extends JPanel implements Runnable {
 		vTarget = cameraPos.add(cameraLookVec);
 		Matrix4 viewMat= new Matrix4().initPointAt(cameraPos, vTarget, up).invertMatrix();
 		
-		// create new zBuffer of the right size		
-		zBuffer = new float[width*4][height*4];	
+		// create new zBuffer of the right size (extra space for big sudden changes in window size)
+		zBuffer = new float[(sMaxH+height)/2][(sMaxW+width)/2];
 		// initialize zBuffer	
 		for (short q = 0; q < height; ++q) {
 			if(!go)break;
@@ -165,7 +170,7 @@ public class Viewer3d extends JPanel implements Runnable {
 			// Normalize normal vector
 			norm.normalize3d();
 			
-			if (norm.dot(cameraLookVec)<0.0f&&inFrontOfCamera(cameraLookVec, cameraPos, t, norm)) {
+			if (norm.dot(cameraLookVec)<.0f&&inFrontOfCamera(cameraLookVec, cameraPos, t, norm)) {
 				// Get light incidence angle
 				float angleCos = Math.max(0.1f, norm.dot(lightDir));
 
@@ -212,8 +217,7 @@ public class Viewer3d extends JPanel implements Runnable {
 		g2.drawImage(img, 0, 0, null);
 	}
 
-	public void paintComponent(Graphics g) {
-	}
+	public void paintComponent(Graphics g) {}
 
 	public Color getShade(Color color, float shade) {
 		// apply shading to the pixel
@@ -228,110 +232,12 @@ public class Viewer3d extends JPanel implements Runnable {
 	}
 	
 	public boolean inFrontOfCamera(Vector cameraVec, Vector cameraPos, Triangle t, Vector normal) {
-		if(cameraVec.dot(vBuffer[t.v1].sub(cameraPos)) > 0.0f || cameraVec.dot(vBuffer[t.v2].sub(cameraPos)) > 0.0f || cameraVec.dot(vBuffer[t.v3].sub(cameraPos)) > 0.0f) {
+		if(vBuffer[t.v1].z < cameraPos.z || vBuffer[t.v2].z < cameraPos.z || vBuffer[t.v3].z < cameraPos.z){
 			return true;
 		}else {
 			return false;
 		}
 	}
-	
-	public Vector intersectPlane(Vector plane_p, Vector plane_n, Vector lineStart, Vector lineEnd){
-		plane_n.normalize3d();
-		float plane_d = -plane_n.dot(plane_p);
-		float ad = lineStart.dot(plane_n);
-		float bd = lineEnd.dot(plane_n);
-		float t = (-plane_d - ad) / (bd - ad);
-		Vector lineStartToEnd = lineEnd.sub(lineStart);
-		Vector lineToIntersect = lineStartToEnd.mul(t);
-		return lineStart.add(lineToIntersect);
-	}
-	
-	
-	// Return signed shortest distance from point to plane, plane normal must be normalised
-	public float dist(Vector p, Vector plane_n, Vector plane_p) {
-		p.normalize3d();
-		return (plane_n.x * p.x + plane_n.y * p.y + plane_n.z * p.z - plane_n.dot(plane_p));
-	}
-	
-	public int clipAgainstPlane(Vector plane_p, Vector plane_n, Triangle in_tri, Triangle out_tri1, Triangle out_tri2){
-		// Make sure plane normal is indeed normal
-		plane_n.normalize3d();
-
-		// Create two temporary storage arrays to classify points either side of plane
-		// If distance sign is positive, point lies on "inside" of plane
-		Vector inside_points[]= new Vector[3];  int nInsidePointCount = 0;
-		Vector outside_points[]= new Vector[3]; int nOutsidePointCount = 0;
-
-		// Get signed distance of each point in triangle to plane
-		float d0 = dist(vBuffer[out_tri1.v1],plane_n,plane_p);
-		float d1 = dist(vBuffer[out_tri1.v2],plane_n,plane_p);
-		float d2 = dist(vBuffer[out_tri1.v3],plane_n,plane_p);
-
-		if (d0 >= 0) { inside_points[nInsidePointCount++] = vBuffer[in_tri.v1]; }
-		else { outside_points[nOutsidePointCount++] = vBuffer[in_tri.v1]; }
-		if (d1 >= 0) { inside_points[nInsidePointCount++] = vBuffer[in_tri.v2]; }
-		else { outside_points[nOutsidePointCount++] = vBuffer[in_tri.v2]; }
-		if (d2 >= 0) { inside_points[nInsidePointCount++] = vBuffer[in_tri.v3]; }
-		else { outside_points[nOutsidePointCount++] = vBuffer[in_tri.v3]; }
-
-		// Now classify triangle points, and break the input triangle into 
-		// smaller output triangles if required. There are four possible
-		// outcomes...
-
-		if (nInsidePointCount == 0){
-			// All points lie on the outside of plane, so clip whole triangle
-			// It ceases to exist
-
-			return 0; // No returned triangles are valid
-		}else if (nInsidePointCount == 3){
-			// All points lie on the inside of plane, so do nothing
-			// and allow the triangle to simply pass through
-			out_tri1 = in_tri;
-
-			return 1; // Just the one returned original triangle is valid
-		}else if (nInsidePointCount == 1 && nOutsidePointCount == 2){
-			// Triangle should be clipped. As two points lie outside
-			// the plane, the triangle simply becomes a smaller triangle
-
-			// Copy appearance info to new triangle
-			out_tri1.color =  in_tri.color;
-
-			// The inside point is valid, so keep that...
-			vBuffer[out_tri1.v1] = inside_points[0];
-
-			// but the two new points are at the locations where the 
-			// original sides of the triangle (lines) intersect with the plane
-			vBuffer[out_tri1.v2] = intersectPlane(plane_p, plane_n, inside_points[0], outside_points[0]);
-			vBuffer[out_tri1.v3] = intersectPlane(plane_p, plane_n, inside_points[0], outside_points[1]);
-
-			return 1; // Return the newly formed single triangle
-		}else if (nInsidePointCount == 2 && nOutsidePointCount == 1){
-			// Triangle should be clipped. As two points lie inside the plane,
-			// the clipped triangle becomes a "quad". Fortunately, we can
-			// represent a quad with two new triangles
-
-			// Copy appearance info to new triangles
-			out_tri1.color =  in_tri.color;
-
-			out_tri2.color =  in_tri.color;
-
-			// The first triangle consists of the two inside points and a new
-			// point determined by the location where one side of the triangle
-			// intersects with the plane
-			vBuffer[out_tri1.v1] = inside_points[0];
-			vBuffer[out_tri1.v2] = inside_points[1];
-			vBuffer[out_tri1.v3] = intersectPlane(plane_p, plane_n, inside_points[0], outside_points[0]);
-
-			// The second triangle is composed of one of he inside points, a
-			// new point determined by the intersection of the other side of the 
-			// triangle and the plane, and the newly created point above
-			vBuffer[out_tri2.v1] = inside_points[1];
-			out_tri2.v2 = out_tri1.v3;
-			vBuffer[out_tri2.v1] = intersectPlane(plane_p, plane_n, inside_points[1], outside_points[0]);
-
-			return 2; // Return two newly formed triangles which form a quad
-		}else {return 0;}
-	}
-	
+		
 
 }

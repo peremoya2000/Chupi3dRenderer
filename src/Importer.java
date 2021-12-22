@@ -11,6 +11,10 @@ public class Importer {
 	private Vector[] vBuffer;
 	public Importer() {}
 	
+	public Vector[] getVertexBuffer() {
+		return vBuffer;
+	}
+	
 	public ArrayList<Triangle> importModel(String filelocation) {
 		ArrayList<Triangle>tris = new ArrayList<Triangle>();
 		ArrayList<Vector> vertices= new ArrayList<Vector>();
@@ -47,9 +51,6 @@ public class Importer {
 		return tris;
 	}
 	
-	public Vector[] getVertexBuffer() {
-		return vBuffer;
-	}
 	public ArrayList<Triangle> importDefault(){
 		ArrayList<Triangle>tris = new ArrayList<Triangle>();
 		vBuffer = new Vector[4];

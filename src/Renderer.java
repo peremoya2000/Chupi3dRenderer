@@ -39,7 +39,7 @@ public class Renderer extends JFrame{
         
         this.addComponentListener(new ComponentAdapter() {  
                 public void componentResized(ComponentEvent evt) {
-                	v.pause();         	
+                	v.pause();
                 }
         });
                 
@@ -50,7 +50,6 @@ public class Renderer extends JFrame{
         this.setDefaultCloseOperation(EXIT_ON_CLOSE);
         v.init();
     }
-
 }
 
 
