@@ -1,11 +1,9 @@
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
-
 import javax.swing.JPanel;
 import javax.swing.JSlider;
 
@@ -15,6 +13,7 @@ public class Viewer3d extends JPanel implements Runnable {
 	private boolean go;
 	private JSlider headingSlider, pitchSlider, rollSlider, fovSlider;
 	private ArrayList<Triangle> tris;
+	private Vector[] vBuffer;
 	private BufferedImage img;
 	private int width, height, sleep;
 	private Graphics2D g2d;
@@ -40,15 +39,17 @@ public class Viewer3d extends JPanel implements Runnable {
 		this.fov = (float) Math.toRadians(90);
 		this.ratio = 1.0f;
 		this.camYaw=0;
-		this.tris = new ArrayList<Triangle>();
 		this.myThread = new Thread(this);
-		this.sleep = 33;
+		this.sleep = 16;
 		this.projMatrix = new Matrix4();
 		this.lightDir.normalize3d();
 
 		Importer i = new Importer();
 		this.tris=i.importDefault();
 		//this.tris = i.importModel("C:\\Users\\Usuario\\Desktop\\ship.obj");
+		this.vBuffer=i.getVertexBuffer();
+		
+		
 	}
 
 	// Adjust to new size
@@ -89,7 +90,7 @@ public class Viewer3d extends JPanel implements Runnable {
 		while (true) {
 			if(go) {
 				try {
-					Thread.sleep(sleep);
+					Thread.sleep(sleep);					
 					myPaint();
 				} catch (InterruptedException e) {
 					e.printStackTrace();
@@ -107,9 +108,11 @@ public class Viewer3d extends JPanel implements Runnable {
 	}
 
 	public void myPaint() {
+		
 		Graphics2D g2 = (Graphics2D) this.getGraphics();
 		g2d.fillRect(0, 0, width, height);
-
+		
+		
 		// get slider values, update rotation quaternions and multiply them
 		float heading = (float) Math.toRadians(headingSlider.getValue());
 		Quaternion rotQuaternion = new Quaternion(up, heading);
@@ -125,30 +128,29 @@ public class Viewer3d extends JPanel implements Runnable {
 		vTarget = cameraPos.add(cameraLookVec);
 		Matrix4 viewMat= new Matrix4().initPointAt(cameraPos, vTarget, up).invertMatrix();
 		
-		// create new zBuffer of the right size
-		zBuffer = new float[width*4][height*4];
-		// initialize zBuffer
-		for (int q = 0; q < height; ++q) {
+		// create new zBuffer of the right size		
+		zBuffer = new float[width*4][height*4];	
+		// initialize zBuffer	
+		for (short q = 0; q < height; ++q) {
 			if(!go)break;
-			for (int r = 0; r < width; ++r) {
+			for (short r = 0; r < width; ++r) {
 				zBuffer[q][r] = Float.NEGATIVE_INFINITY;
 			}
-		}
-
+		}		
+		
 		// loop through all the the triangles in the scene
 		for (Triangle t : tris) {
 			if(!go)break;
 			
 			// Apply rotation to the three vertices of the triangle
-			Vector v1 = t.v1.rotate(rotQuaternion);
-			Vector v2 = t.v2.rotate(rotQuaternion);
-			Vector v3 = t.v3.rotate(rotQuaternion);
+			Vector v1 = vBuffer[t.v1].rotate(rotQuaternion);
+			Vector v2 = vBuffer[t.v2].rotate(rotQuaternion);
+			Vector v3 = vBuffer[t.v3].rotate(rotQuaternion);
 			
 			//View transformations
 			v1 = viewMat.transform(v1);
 			v2 = viewMat.transform(v2);
-			v3 = viewMat.transform(v3);
-				
+			v3 = viewMat.transform(v3);				
 			
 			// Apply projection matrix
 			v1 = projMatrix.transform(v1);
@@ -158,7 +160,7 @@ public class Viewer3d extends JPanel implements Runnable {
 			// Compute two lines and use them to get the normal of the triangle
 			Vector ab = new Vector(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z, 1);
 			Vector ac = new Vector(v3.x - v1.x, v3.y - v1.y, v3.z - v1.z, 1);
-			Vector norm = new Vector(ab.y * ac.z - ab.z * ac.y, ab.z * ac.x - ab.x * ac.z, ab.x * ac.y - ab.y * ac.x,1);
+			Vector norm = new Vector(ab.y * ac.z - ab.z * ac.y, ab.z * ac.x - ab.x * ac.z, ab.x * ac.y - ab.y * ac.x, 1);
 			
 			// Normalize normal vector
 			norm.normalize3d();
@@ -188,6 +190,7 @@ public class Viewer3d extends JPanel implements Runnable {
 				short maxY = (short) Math.min(height - 1, Math.floor(Math.max(v1.y, Math.max(v2.y, v3.y))));
 
 				float triangleArea = (v1.y - v3.y) * (v2.x - v3.x) + (v2.y - v3.y) * (v3.x - v1.x);
+				
 				// loop through the pixels that correspond to the triangle and shade them
 				for (short y = minY; y <= maxY; ++y) {
 					for (short x = minX; x <= maxX; ++x) {
@@ -217,16 +220,15 @@ public class Viewer3d extends JPanel implements Runnable {
 		float redLinear = (color.getRed() * color.getRed()) * shade;
 		float greenLinear = (color.getGreen() * color.getGreen()) * shade;
 		float blueLinear = (color.getBlue() * color.getBlue()) * shade;
-		// convert the resulting colour from linear to sRGB
+		// convert the resulting color from linear to sRGB
 		short red = (short) Math.sqrt(redLinear);
 		short green = (short) Math.sqrt(greenLinear);
 		short blue = (short) Math.sqrt(blueLinear);
-
 		return new Color(red, green, blue);
 	}
 	
 	public boolean inFrontOfCamera(Vector cameraVec, Vector cameraPos, Triangle t, Vector normal) {
-		if(cameraVec.dot(t.v1.sub(cameraPos)) > 0.0f || cameraVec.dot(t.v2.sub(cameraPos)) > 0.0f || cameraVec.dot(t.v3.sub(cameraPos)) > 0.0f) {
+		if(cameraVec.dot(vBuffer[t.v1].sub(cameraPos)) > 0.0f || cameraVec.dot(vBuffer[t.v2].sub(cameraPos)) > 0.0f || cameraVec.dot(vBuffer[t.v3].sub(cameraPos)) > 0.0f) {
 			return true;
 		}else {
 			return false;
@@ -261,16 +263,16 @@ public class Viewer3d extends JPanel implements Runnable {
 		Vector outside_points[]= new Vector[3]; int nOutsidePointCount = 0;
 
 		// Get signed distance of each point in triangle to plane
-		float d0 = dist(in_tri.v1,plane_n,plane_p);
-		float d1 = dist(in_tri.v2,plane_n,plane_p);
-		float d2 = dist(in_tri.v3,plane_n,plane_p);
+		float d0 = dist(vBuffer[out_tri1.v1],plane_n,plane_p);
+		float d1 = dist(vBuffer[out_tri1.v2],plane_n,plane_p);
+		float d2 = dist(vBuffer[out_tri1.v3],plane_n,plane_p);
 
-		if (d0 >= 0) { inside_points[nInsidePointCount++] = in_tri.v1; }
-		else { outside_points[nOutsidePointCount++] = in_tri.v1; }
-		if (d1 >= 0) { inside_points[nInsidePointCount++] = in_tri.v2; }
-		else { outside_points[nOutsidePointCount++] = in_tri.v2; }
-		if (d2 >= 0) { inside_points[nInsidePointCount++] = in_tri.v3; }
-		else { outside_points[nOutsidePointCount++] = in_tri.v3; }
+		if (d0 >= 0) { inside_points[nInsidePointCount++] = vBuffer[in_tri.v1]; }
+		else { outside_points[nOutsidePointCount++] = vBuffer[in_tri.v1]; }
+		if (d1 >= 0) { inside_points[nInsidePointCount++] = vBuffer[in_tri.v2]; }
+		else { outside_points[nOutsidePointCount++] = vBuffer[in_tri.v2]; }
+		if (d2 >= 0) { inside_points[nInsidePointCount++] = vBuffer[in_tri.v3]; }
+		else { outside_points[nOutsidePointCount++] = vBuffer[in_tri.v3]; }
 
 		// Now classify triangle points, and break the input triangle into 
 		// smaller output triangles if required. There are four possible
@@ -295,12 +297,12 @@ public class Viewer3d extends JPanel implements Runnable {
 			out_tri1.color =  in_tri.color;
 
 			// The inside point is valid, so keep that...
-			out_tri1.v1 = inside_points[0];
+			vBuffer[out_tri1.v1] = inside_points[0];
 
 			// but the two new points are at the locations where the 
 			// original sides of the triangle (lines) intersect with the plane
-			out_tri1.v2 = intersectPlane(plane_p, plane_n, inside_points[0], outside_points[0]);
-			out_tri1.v3 = intersectPlane(plane_p, plane_n, inside_points[0], outside_points[1]);
+			vBuffer[out_tri1.v2] = intersectPlane(plane_p, plane_n, inside_points[0], outside_points[0]);
+			vBuffer[out_tri1.v3] = intersectPlane(plane_p, plane_n, inside_points[0], outside_points[1]);
 
 			return 1; // Return the newly formed single triangle
 		}else if (nInsidePointCount == 2 && nOutsidePointCount == 1){
@@ -316,16 +318,16 @@ public class Viewer3d extends JPanel implements Runnable {
 			// The first triangle consists of the two inside points and a new
 			// point determined by the location where one side of the triangle
 			// intersects with the plane
-			out_tri1.v1 = inside_points[0];
-			out_tri1.v2 = inside_points[1];
-			out_tri1.v3 = intersectPlane(plane_p, plane_n, inside_points[0], outside_points[0]);
+			vBuffer[out_tri1.v1] = inside_points[0];
+			vBuffer[out_tri1.v2] = inside_points[1];
+			vBuffer[out_tri1.v3] = intersectPlane(plane_p, plane_n, inside_points[0], outside_points[0]);
 
 			// The second triangle is composed of one of he inside points, a
 			// new point determined by the intersection of the other side of the 
 			// triangle and the plane, and the newly created point above
-			out_tri2.v1 = inside_points[1];
+			vBuffer[out_tri2.v1] = inside_points[1];
 			out_tri2.v2 = out_tri1.v3;
-			out_tri2.v3 = intersectPlane(plane_p, plane_n, inside_points[1], outside_points[0]);
+			vBuffer[out_tri2.v1] = intersectPlane(plane_p, plane_n, inside_points[1], outside_points[0]);
 
 			return 2; // Return two newly formed triangles which form a quad
 		}else {return 0;}

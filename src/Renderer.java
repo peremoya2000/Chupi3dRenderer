@@ -2,7 +2,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("serial")
 public class Renderer extends JFrame{
