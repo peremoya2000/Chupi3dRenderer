@@ -4,7 +4,7 @@ class Matrix4 {
         this.values = values;
     }
     Matrix4(){
-    	this.values= new float[4][4];
+    	this.values = new float[4][4];
     }
 	public float get(int x, int y){
 		return values[x][y];
@@ -63,22 +63,22 @@ class Matrix4 {
 
 		// Construct Dimensioning and Translation Matrix	
 		Matrix4 matrix= new Matrix4();
-		matrix.values[0][0] = newRight.x;	matrix.values[0][1] = newRight.y;	matrix.values[0][2] = newRight.z;	matrix.values[0][3] = 0.0f;
-		matrix.values[1][0] = newUp.x;		matrix.values[1][1] = newUp.y;		matrix.values[1][2] = newUp.z;		matrix.values[1][3] = 0.0f;
-		matrix.values[2][0] = newForward.x;	matrix.values[2][1] = newForward.y;	matrix.values[2][2] = newForward.z;	matrix.values[2][3] = 0.0f;
-		matrix.values[3][0] = pos.x;			matrix.values[3][1] = pos.y;			matrix.values[3][2] = pos.z;			matrix.values[3][3] = 1.0f;
+		matrix.values[0][0] = newRight.x;	matrix.values[0][1] = newRight.y;	matrix.values[0][2] = newRight.z;	matrix.values[0][3] = 0;
+		matrix.values[1][0] = newUp.x;		matrix.values[1][1] = newUp.y;		matrix.values[1][2] = newUp.z;		matrix.values[1][3] = 0;
+		matrix.values[2][0] = newForward.x;	matrix.values[2][1] = newForward.y;	matrix.values[2][2] = newForward.z;	matrix.values[2][3] = 0;
+		matrix.values[3][0] = pos.x;			matrix.values[3][1] = pos.y;			matrix.values[3][2] = pos.z;			matrix.values[3][3] = 1;
 		return matrix;
 	}
 	
 	public Matrix4 invertMatrix() { // Only for Rotation/Translation Matrices
 		Matrix4 matrix = new Matrix4();
-		matrix.values[0][0] = this.values[0][0]; matrix.values[0][1] = this.values[1][0]; matrix.values[0][2] = this.values[2][0]; matrix.values[0][3] = 0.0f;
-		matrix.values[1][0] = this.values[0][1]; matrix.values[1][1] = this.values[1][1]; matrix.values[1][2] = this.values[2][1]; matrix.values[1][3] = 0.0f;
-		matrix.values[2][0] = this.values[0][2]; matrix.values[2][1] = this.values[1][2]; matrix.values[2][2] = this.values[2][2]; matrix.values[2][3] = 0.0f;
+		matrix.values[0][0] = this.values[0][0]; matrix.values[0][1] = this.values[1][0]; matrix.values[0][2] = this.values[2][0]; matrix.values[0][3] = 0;
+		matrix.values[1][0] = this.values[0][1]; matrix.values[1][1] = this.values[1][1]; matrix.values[1][2] = this.values[2][1]; matrix.values[1][3] = 0;
+		matrix.values[2][0] = this.values[0][2]; matrix.values[2][1] = this.values[1][2]; matrix.values[2][2] = this.values[2][2]; matrix.values[2][3] = 0;
 		matrix.values[3][0] = -(this.values[3][0] * matrix.values[0][0] + this.values[3][1] * matrix.values[1][0] + this.values[3][2] * matrix.values[2][0]);
 		matrix.values[3][1] = -(this.values[3][0] * matrix.values[0][1] + this.values[3][1] * matrix.values[1][1] + this.values[3][2] * matrix.values[2][1]);
 		matrix.values[3][2] = -(this.values[3][0] * matrix.values[0][2] + this.values[3][1] * matrix.values[1][2] + this.values[3][2] * matrix.values[2][2]);
-		matrix.values[3][3] = 1.0f;
+		matrix.values[3][3] = 1;
 		return matrix;
 	}
 	

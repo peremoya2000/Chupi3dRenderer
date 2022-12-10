@@ -170,7 +170,7 @@ public class Viewer3d extends JPanel implements Runnable {
 			// Normalize normal vector
 			norm.normalize3d();
 			
-			if (norm.dot(cameraLookVec)<.0f&&inFrontOfCamera(cameraLookVec, cameraPos, t, norm)) {
+			if (norm.dot(cameraLookVec)<0 && inFrontOfCamera(cameraLookVec, cameraPos, t, norm)) {
 				// Get light incidence angle
 				float angleCos = Math.max(0.1f, norm.dot(lightDir));
 

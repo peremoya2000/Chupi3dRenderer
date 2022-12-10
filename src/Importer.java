@@ -21,8 +21,7 @@ public class Importer {
 		Triangle temp;
 		File file = new File(filelocation);
 		if (!file.isFile()) return null;
-		try {
-			BufferedReader br = new BufferedReader(new FileReader(file));
+		try (BufferedReader br = new BufferedReader(new FileReader(file))) {
 			String st; 
 			String[] elems;
 			while ((st = br.readLine()) != null) {
@@ -33,21 +32,27 @@ public class Importer {
 			    					Float.parseFloat(elems[2])*0.25f,
 			    					Float.parseFloat(elems[3])*0.25f, 1.0f));
 			    }else if(elems[0].equals("f")){
+			    	if(elems.length>4)
+			    	{
+			    		throw new IOException("Quad based meshes are not supported");
+			    	}    		
+			    	
 			    	temp= new Triangle(
-			    			(Integer.parseInt(elems[1])-1),
-			    			(Integer.parseInt(elems[2])-1),
-			    			(Integer.parseInt(elems[3])-1),
+			    			(Integer.parseInt(elems[1].split("/")[0])-1),
+			    			(Integer.parseInt(elems[2].split("/")[0])-1),
+			    			(Integer.parseInt(elems[3].split("/")[0])-1),
 			    			Color.WHITE);
+			    	
 			    	tris.add(temp);
 			    }	    
 			}
 			br.close();
-			vBuffer= vertices.toArray(new Vector[0]);
+			vBuffer= vertices.toArray(new Vector[vertices.size()]);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
-		}		
+		}
 		return tris;
 	}
 	
