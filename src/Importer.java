@@ -9,6 +9,7 @@ import java.awt.Color;
 
 public class Importer {
 	private Vector[] vBuffer;
+	private final byte inflateAmmount = 5; 
 	public Importer() {}
 	
 	public Vector[] getVertexBuffer() {
@@ -34,10 +35,10 @@ public class Importer {
 			    }else if(elems[0].equals("f")){
 			    	if(elems.length>4)
 			    	{
-			    		throw new IOException("Quad based meshes are not supported");
+			    		throw new IOException("Mesh import failed. Only triangle based meshes are supported.");
 			    	}    		
 			    	
-			    	temp= new Triangle(
+			    	temp = new Triangle(
 			    			(Integer.parseInt(elems[1].split("/")[0])-1),
 			    			(Integer.parseInt(elems[2].split("/")[0])-1),
 			    			(Integer.parseInt(elems[3].split("/")[0])-1),
@@ -70,7 +71,7 @@ public class Importer {
 		tris.add(new Triangle(1, 0, 3, Color.GREEN));
 		tris.add(new Triangle(1, 3, 2, Color.BLUE));
 
-		for (byte i=0; i<5; ++i) {
+		for (byte i=0; i<inflateAmmount; ++i) {
 			tris=inflate(tris);
 		}
 		return tris;

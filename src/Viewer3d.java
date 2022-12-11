@@ -47,7 +47,7 @@ public class Viewer3d extends JPanel implements Runnable {
 		this.myThread = new Thread(this);
 		this.sleep = 1;
 		this.projMatrix = new Matrix4();
-		this.lightDir.normalize3d();
+		this.lightDir.normalize();
 
 		Importer i = new Importer();
 		this.tris=i.importDefault(); 
@@ -163,12 +163,12 @@ public class Viewer3d extends JPanel implements Runnable {
 			v3 = projMatrix.transform(v3);
 
 			// Compute two lines and use them to get the normal of the triangle
-			Vector ab = new Vector(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z, 1);
-			Vector ac = new Vector(v3.x - v1.x, v3.y - v1.y, v3.z - v1.z, 1);
-			Vector norm = new Vector(ab.y * ac.z - ab.z * ac.y, ab.z * ac.x - ab.x * ac.z, ab.x * ac.y - ab.y * ac.x, 1);
+			Vector ab = v2.sub(v1);
+			Vector ac = v3.sub(v1);
+			Vector norm = ab.cross(ac);
 			
 			// Normalize normal vector
-			norm.normalize3d();
+			norm.normalize();
 			
 			if (norm.dot(cameraLookVec)<0 && inFrontOfCamera(cameraLookVec, cameraPos, t, norm)) {
 				// Get light incidence angle
@@ -179,6 +179,7 @@ public class Viewer3d extends JPanel implements Runnable {
 				++v2.x; ++v2.y;				
 				++v3.x; ++v3.y;
 				
+				//Account for aspect ratio
 				float mult = 0.5f * height;
 				float dif = 0.5f * (width - height);
 				v1.xyscale(mult);

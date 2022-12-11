@@ -51,12 +51,12 @@ class Matrix4 {
 	public Matrix4 initPointAt(Vector pos, Vector target, Vector up){
 		// Calculate new forward direction
 		Vector newForward = target.sub(pos);
-		newForward.normalize3d();
+		newForward.normalize();
 
 		// Calculate new Up direction
 		Vector a = newForward.mul(up.dot(newForward));
 		Vector newUp = up.sub(a);
-		newUp.normalize3d();
+		newUp.normalize();
 
 		// New Right direction is easy, its just cross product
 		Vector newRight = newUp.cross(newForward);
@@ -66,7 +66,7 @@ class Matrix4 {
 		matrix.values[0][0] = newRight.x;	matrix.values[0][1] = newRight.y;	matrix.values[0][2] = newRight.z;	matrix.values[0][3] = 0;
 		matrix.values[1][0] = newUp.x;		matrix.values[1][1] = newUp.y;		matrix.values[1][2] = newUp.z;		matrix.values[1][3] = 0;
 		matrix.values[2][0] = newForward.x;	matrix.values[2][1] = newForward.y;	matrix.values[2][2] = newForward.z;	matrix.values[2][3] = 0;
-		matrix.values[3][0] = pos.x;			matrix.values[3][1] = pos.y;			matrix.values[3][2] = pos.z;			matrix.values[3][3] = 1;
+		matrix.values[3][0] = pos.x;		matrix.values[3][1] = pos.y;		matrix.values[3][2] = pos.z;		matrix.values[3][3] = 1;
 		return matrix;
 	}
 	
